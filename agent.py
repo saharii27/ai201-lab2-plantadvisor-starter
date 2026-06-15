@@ -71,6 +71,8 @@ SYSTEM_PROMPT = (
     "Always use your tools to look up plant-specific information before answering — "
     "don't rely on your general knowledge alone. If a plant isn't in your database, "
     "say so clearly and offer general guidance based on what the user describes.\n\n"
+    "When lookup_plant returns found=False, do not invent specific care instructions. "  # add this
+    "Acknowledge the gap, then offer general advice for the plant type.\n\n"             # and this
     "Keep your advice practical and specific. Cite the source of your information "
     "when you have it (e.g., 'According to the care data for your monstera...')."
 )
@@ -128,4 +130,42 @@ def run_agent(user_message: str, history: list) -> str:
 
     Before writing code, complete specs/agent-loop-spec.md.
     """
-    return "🌱 Agent not yet implemented. Complete Milestone 2 to activate the Plant Advisor."
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+    # Add conversation history from Gradio (list of [user, assistant] pairs)
+    for user_msg, assistant_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": assistant_msg})
+
+    # Add the new user message
+    messages.append({"role": "user", "content": user_message})
+
+    # Agent loop
+    for _ in range(MAX_TOOL_ROUNDS):
+        response = _client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=messages,
+            tools=TOOL_DEFINITIONS,
+        )
+
+        assistant_message = response.choices[0].message
+
+        # If no tool calls, we have the final answer
+        if not assistant_message.tool_calls:
+            return assistant_message.content
+
+        # Append assistant message (with tool_calls) BEFORE results
+        messages.append(assistant_message)
+
+        # Execute each tool call and append results
+        for tool_call in assistant_message.tool_calls:
+            tool_name = tool_call.function.name
+            tool_args = json.loads(tool_call.function.arguments)
+            result = dispatch_tool(tool_name, tool_args)
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": result,
+            })
+
+    return assistant_message.content or "I wasn't able to complete that request."

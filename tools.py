@@ -21,7 +21,9 @@ _MONTH_TO_SEASON = {
 
 
 def lookup_plant(plant_name: str) -> dict:
+    
     """
+    
     Search the plant database for a plant by name and return its care information.
 
     TODO — Milestone 1:
@@ -52,10 +54,29 @@ def lookup_plant(plant_name: str) -> dict:
 
     Before writing code, complete the lookup_plant section of specs/tool-functions-spec.md.
     """
+    normalized = plant_name.strip().lower()
+    if normalized in _plant_db:
+        return {"found": True, "plant": _plant_db[normalized]}
+
+    # 2. Display name match
+    for plant in _plant_db.values():
+        if plant["display_name"].lower() == normalized:
+            return {"found": True, "plant": plant}
+
+    # 3. Alias match
+    for plant in _plant_db.values():
+        if normalized in [alias.lower() for alias in plant["aliases"]]:
+            return {"found": True, "plant": plant}
+
     return {
         "found": False,
         "name": plant_name,
-        "message": "Plant lookup not yet implemented. Complete Milestone 1.",
+        "message": (
+            f"No plant matching '{normalized}' was found in the database. "
+            "Do not invent specific care instructions. Instead, acknowledge "
+            "the plant is not in your database and offer general advice based "
+            "on what the user describes (e.g., tropical, succulent, fern)."
+        ),
     }
 
 

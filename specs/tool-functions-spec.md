@@ -71,6 +71,9 @@ likely match for clean user input. Aliases are the broadest net, so they go last
 
 ```
 [your answer here]
+For each plant in _plant_db.values(), iterate through its "aliases" list.
+Lowercase each alias and compare to the normalized input. If any alias
+matches, return that plant entry. 
 ```
 
 ---
@@ -81,6 +84,10 @@ likely match for clean user input. Aliases are the broadest net, so they go last
 
 ```
 [your answer here]
+No plant matching '{normalized}' was found in the database. The agent
+should acknowledge this plant is not in its database and offer general
+care advice based on what the user describes, without inventing specific
+care data.
 ```
 
 ---
